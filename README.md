@@ -13,7 +13,7 @@ A lightweight DOM & Event manipulation.
 
 ### Usage
 
-```
+```js
 import {create, add} from 'realdom';
 
 let div = create('DIV');
@@ -39,7 +39,7 @@ Here are several examples:
 
 ### DOM
 
-```
+```js
 import {
   ready,
   create,
@@ -82,10 +82,9 @@ Returned elements have several helpful methods as below:
  - .empty()
  - .destroy()
 
-
 #### Event
 
-```
+```js
 import { Event } from 'realdom';
 ```
 
@@ -96,7 +95,7 @@ import { Event } from 'realdom';
 
 Examples:
 
-```
+```js
 import {
   ready,
   add,
@@ -120,12 +119,15 @@ ready(() => {
 
   // also add a class "sub-item"
   div2.addClass('sub-item');
+  // or try the shorthand
+  div2.class('sub-item');
+  // .class(name, state=) if the second param is not there the class
+  // will be toggled
 
   // now, we can extract list of elements by class name:
   let subItems = all('.sub-item');
 
   console.log(subItems);
-
 
   // create a button
   let btn = add('INPUT');
@@ -143,13 +145,16 @@ ready(() => {
     fontSize: 15,
     backgroundColor: '#ff6',
     maxWidth: 500,
-    'padding-top': '2px'
+    paddingTop: '2px'
   });
 
   // set an event listener
   Event.on(btn, 'click', () => {
     alert('Hello! How it\'s going?');
   });
+
+  // or
+  btn.on('click', (evt, el) => el.html('Howdy!'));
 
   // simulate a click event on there (it works as same as jQuery.trigger method)
   Event.emit(btn, new MouseEvent('click', {
@@ -159,7 +164,7 @@ ready(() => {
   }));
 
   // or
-  Event.emit(btn, 'custom-event');
+  btn.emit('custom-event');
 
 });
 ```

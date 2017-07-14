@@ -147,6 +147,8 @@ attachBehaviors = p => {
 
     p.destroy = () => p.remove ? p.remove() : p.parentNode && p.parentNode.removeChild(p);
 
+    p.on = EventManager('on', p);
+    p.once = EventManager('once', p);
     p.emit = Event.emit.bind(null, p);
 
     p.___BEHAVIORS_ATTACHED = !0;
