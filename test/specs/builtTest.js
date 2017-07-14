@@ -3,8 +3,8 @@
  * @ndaidong
  */
 
-var fs = require('fs');
-var test = require('tape');
+const fs = require('fs'),
+  test = require('tape');
 
 var pkgFake = require('../../package.json');
 var proFile = './dist/realdom.js';
@@ -26,7 +26,7 @@ test('Validate production output', (assert) => {
   assert.end();
 });
 
-test('Validate development output', (assert) => {
+test('Validate development output', assert => {
   assert.ok(fs.existsSync(devFile), 'Development file must be generated');
 
   let s = fs.readFileSync(devFile, 'utf8');

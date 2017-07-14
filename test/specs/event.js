@@ -1,26 +1,22 @@
 var test = require('tape');
 var sinon = require('sinon');
 
-var {
-  isFunction
-} = require('bellajs');
+const isFunc = o => typeof o === 'function';
 
 var es6RD = require('../../src/main');
 var fullRD = require('../../dist/realdom');
 var minRD = require('../../dist/realdom.min');
 
-let keys = [
-  'on', 'off', 'simulate', 'stop', 'locate'
-];
+let keys = ['on', 'off', 'emit', 'stop'];
 
 let checkEventMethods = (el, assert) => {
-  keys.forEach((k) => {
-    assert.ok(isFunction(el[k]), `el.${k}() must be a function`);
+  keys.forEach(k => {
+    assert.ok(isFunc(el[k]), `el.${k}() must be a function`);
   });
 };
 
-var checkEvents = (doc) => {
-  test('Test doc.Event:', (assert) => {
+var checkEvents = doc => {
+  test('Test doc.Event:', assert => {
 
     assert.comment('Test event listener on/off:');
 
@@ -28,15 +24,15 @@ var checkEvents = (doc) => {
     let el = doc.add('DIV');
     let child = doc.add('DIV', el);
 
-    doc.Event.on(el, 'click', fn);
-    doc.Event.simulate(el, 'click');
+    const listener = doc.Event.on(el, 'custom', fn);
+    doc.Event.emit(el, 'custom');
     assert.ok(fn.calledOnce, 'fn must be called once');
 
-    doc.Event.simulate(child, 'click');
+    doc.Event.emit(child, 'custom');
     assert.ok(fn.calledTwice, 'fn must be called twice');
 
-    doc.Event.off(el, 'click', fn);
-    doc.Event.simulate(el, 'click');
+    listener.off();
+    doc.Event.emit(el, 'custom');
     assert.ok(!fn.calledThrice, 'fn must not be called thrice');
 
     assert.comment('Test event listener stop bubbling:');
@@ -44,19 +40,18 @@ var checkEvents = (doc) => {
       doc.Event.stop(e);
     });
     let fn3 = sinon.spy();
-    doc.Event.on(el, 'click', fn3);
-    doc.Event.on(child, 'click', fn2);
-    doc.Event.simulate(child, 'click');
+    doc.Event.on(el, 'custom', fn3);
+    doc.Event.on(child, 'custom', fn2);
+    doc.Event.emit(child, 'custom');
     assert.ok(fn2.called, 'fn2 must be called');
     assert.ok(!fn3.called, 'fn3 must not be called');
 
     assert.comment('Test event listener locate:');
-    let fn4 = sinon.spy((e) => {
-      let target = doc.Event.locate(e);
+    let fn4 = sinon.spy((e, target) => {
       assert.equals(target, el, 'Element and event target must be the same');
     });
-    doc.Event.on(el, 'click', fn4);
-    doc.Event.simulate(el, 'click');
+    doc.Event.on(el, 'custom', fn4);
+    doc.Event.simulate(el, 'custom');
 
     checkEventMethods(doc.Event, assert);
 

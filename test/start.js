@@ -1,13 +1,11 @@
 // start testing
 
-var {join} = require('path');
+const {join} = require('path');
 
-let dir = '../test/specs/';
+const dir = '../test/specs/';
 [
   'builtTest',
   'apis',
   'dom',
   'event'
-].forEach((script) => {
-  require(join(dir, script));
-});
+].forEach(script => require(join(dir, script)));

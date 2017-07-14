@@ -1,20 +1,13 @@
 # realdom
 A lightweight DOM & Event manipulation.
 
-[![npm version](https://badge.fury.io/js/realdom.svg)](https://badge.fury.io/js/realdom)
-[![Build Status](https://travis-ci.org/ndaidong/realdom.svg?branch=master)](https://travis-ci.org/ndaidong/realdom)
-[![codecov](https://codecov.io/gh/ndaidong/realdom/branch/master/graph/badge.svg)](https://codecov.io/gh/ndaidong/realdom)
-[![Dependency Status](https://gemnasium.com/badges/github.com/ndaidong/realdom.svg)](https://gemnasium.com/github.com/ndaidong/realdom)
-[![NSP Status](https://nodesecurity.io/orgs/techpush/projects/c17a1b90-3c86-41f1-82fb-0c1f76e71cbb/badge)](https://nodesecurity.io/orgs/techpush/projects/c17a1b90-3c86-41f1-82fb-0c1f76e71cbb)
-
-
 # Setup
 
 - CDN
 
-  - [realdom.js](https://rawgit.com/ndaidong/realdom/master/dist/realdom.js)
-  - [realdom.min.js](https://rawgit.com/ndaidong/realdom/master/dist/realdom.min.js)
-  - [realdom.min.map](https://rawgit.com/ndaidong/realdom/master/dist/realdom.min.map)
+  - [realdom.js](https://rawgit.com/SaulDoesCode/realdom/master/dist/realdom.js)
+  - [realdom.min.js](https://rawgit.com/SaulDoesCode/realdom/master/dist/realdom.min.js)
+  - [realdom.min.map](https://rawgit.com/SaulDoesCode/realdom/master/dist/realdom.min.map)
 
 - Also supports ES6 Module, CommonJS, AMD and UMD style.
 
@@ -71,14 +64,18 @@ rows.forEach((row) => {
  - .ready(Function callback)
 
 Returned elements have several helpful methods as below:
-
+ - .class(String|Object name, Boolean state)
  - .hasClass(String className)
  - .addClass(String className)
  - .removeClass(String className)
  - .toggleClass(String className)
  - .replaceClass(String classNameOld, String classNameNew)
- - .setProperty(Object atts)
- - .setStyle(Object style)
+ - .attr(Object|String attr, String val)
+ - .setAttr(String name, String val),
+ - .getAttr(String name),
+ - .removeAttr(String name),
+ - .toggleAttr(String name, Boolean state),
+ - .css(Object|String style, String val)
  - .query(String selectors)
  - .queryAll(String selectors)
  - .html([String html])
@@ -92,12 +89,10 @@ Returned elements have several helpful methods as below:
 import { Event } from 'realdom';
 ```
 
-- .Event.on(String|Element s, String eventName, Function callback)
-- .Event.off(String|Element s, String eventName, Function callback)
-- .Event.simulate(String|Element s, String eventName)
+- .Event.on(String|Element s, String eventName, Function callback(event, target))
+- .Event.once(String|Element s, String eventName, Function callback(event, target))
+- .Event.emit(String|Element s, String eventName)
 - .Event.stop(Event e)
-- .Event.locate(Event e)
-
 
 Examples:
 
@@ -136,14 +131,14 @@ ready(() => {
   let btn = add('INPUT');
 
   // add some attributes
-  btn.setProperty({
+  btn.attr({
     type: 'button',
     id: 'btnLogin',
     value: 'Login'
   });
 
   // specify css style
-  btn.setStyle({
+  btn.css({
     color: 'red',
     fontSize: 15,
     backgroundColor: '#ff6',
@@ -157,7 +152,14 @@ ready(() => {
   });
 
   // simulate a click event on there (it works as same as jQuery.trigger method)
-  Event.simulate(btn, 'click');
+  Event.emit(btn, new MouseEvent('click', {
+    'view': window,
+    'bubbles': true,
+    'cancelable': true
+  }));
+
+  // or
+  Event.emit(btn, 'custom-event');
 
 });
 ```

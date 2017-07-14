@@ -1,23 +1,20 @@
-var test = require('tape');
+const test = require('tape');
 
-var {
-  isFunction
-} = require('bellajs');
+const isFunc = o => typeof o === 'function';
 
 var es6RD = require('../../src/main');
 var fullRD = require('../../dist/realdom');
 var minRD = require('../../dist/realdom.min');
 
-let keys = [
+const keys = [
   'addClass', 'hasClass', 'removeClass', 'toggleClass', 'replaceClass',
-  'query', 'queryAll',
-  'setProperty', 'setStyle',
-  'html', 'empty', 'destroy'
+  'query', 'queryAll', 'css', 'html', 'empty', 'destroy',
+  'attr', 'setAttr', 'getAttr', 'hasAttr', 'toggleAttr', 'removeAttr',
 ];
 
 let checkElementMethods = (el, assert) => {
-  keys.forEach((k) => {
-    assert.ok(isFunction(el[k]), `el.${k}() must be a function`);
+  keys.forEach(k => {
+    assert.ok(isFunc(el[k]), `el.${k}() must be a function`);
   });
 };
 
@@ -87,17 +84,17 @@ var checkDomBehaviors = (doc) => {
     assert.equals(el.getAttribute('_key'), '1234', `Element must have property "_key" is "1234"`);
 
     assert.comment('Test Element.setStyle()');
-    el.setStyle({
+    el.css({
       fontSize: 15,
       backgroundColor: 'green',
       maxWidth: 500,
-      'margin-top': '20px'
+      marginTop: '20px'
     });
     let o = d.getAttribute('style');
     let s = 'font-size: 15px; background-color: green; max-width: 500px; margin-top: 20px;';
     assert.equals(o, s, `Element must have the expected style`);
 
-    el.setStyle('color: red;');
+    el.css('color', 'red');
     o = d.getAttribute('style');
     s = 'font-size: 15px; background-color: green; max-width: 500px; margin-top: 20px; color: red;';
     assert.equals(o, s, `Element style color must be added`);

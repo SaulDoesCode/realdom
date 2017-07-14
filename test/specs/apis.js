@@ -1,35 +1,27 @@
-var test = require('tape');
-
-var {
-  isFunction,
-  isObject
-} = require('bellajs');
+const test = require('tape'),
+  isObj = o => toString.call(o).indexOf('Object') !== -1,
+  isFunc = o => typeof o === 'function';
 
 require('jsdom-global')();
 
-var es6RD = require('../../src/main');
-var fullRD = require('../../dist/realdom');
-var minRD = require('../../dist/realdom.min');
+const es6RD = require('../../src/main'),
+  fullRD = require('../../dist/realdom'),
+  minRD = require('../../dist/realdom.min');
 
-var checkAPIs = (doc) => {
-  test('Test overview:', (assert) => {
+const checkAPIs = (doc) => {
+  test('Test overview:', assert => {
 
-    let keys = [
-      'add', 'queryAll', 'create', 'get', 'query', 'ready'
-    ];
+    let keys = ['add', 'queryAll', 'create', 'get', 'query', 'ready'];
 
-    let check = (k) => {
-      assert.ok(isFunction(doc[k]), `doc.${k} must be function`);
-    };
+    const check = k => {
+      assert.ok(isFunc(doc[k]), `doc.${k} must be function`);
+    }
 
     keys.map(check);
 
-    assert.ok(isObject(doc.Event), `doc.Event must be object`);
-
+    assert.ok(isObj(doc.Event), `doc.Event must be object`);
     assert.end();
   });
 };
 
 [es6RD, fullRD, minRD].map(checkAPIs);
-
-

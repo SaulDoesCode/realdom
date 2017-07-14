@@ -1,310 +1,164 @@
 /**
- * realdom
- * @ndaidong
+ * realdom created by Dong Nguyen
+ * modified by @SaulDoesCode
 **/
 
-import {
-  isUndefined,
-  isObject,
-  isString,
-  isNumber,
-  isElement,
-  isFunction,
-  trim
-} from 'bellajs';
+if (!Array.from) Array.from = c => [...c];
 
+// I know it's ugly but it works
+export const curry = (fn, arity = fn.length, next = (...memory) => (...more) => ((more.length + memory.length) >= arity ? fn: next)(...memory.concat(more))) => next();
 
-if (!Array.from) {
-  Array.from = (c) => {
-    let a = [];
-    for (let i = 0; i < c.length; i++) {
-      a.push(c[i]);
+const doc = document,
+isInstance = curry((t, o) => o && o instanceof t),
+istype = str => obj => typeof obj === str,
+typeinc = str => obj => toString.call(obj).indexOf(str) !== -1,
+isUndef = o => o === void 0,
+isEl = typeinc('HTML'),
+isObj = typeinc('Object'),
+isFunc = istype('function'),
+isStr = istype('string'),
+isBool = istype('boolean'),
+isPrimitive = s => isStr(s) || isBool(s) || !isNaN(s),
+isArrlike = o => o && typeof o.length != 'undefined',
+isEmpty = val => !val || isFunc(val) || !(isObj(val) ? Object.keys(val).length : isArrlike(val) && val.length),
+isNode = isInstance(Node),
+forEach = 'forEach',
+each = (iterable, func, i = 0) => {
+  if (!isEmpty(iterable)) {
+    iterable[forEach] ? iterable[forEach](func) : isArrlike(iterable) && Array.prototype[forEach](iterable, func);
+    if (isObj(iterable)) {
+      const keys = Object.keys(iterable), max = keys.length;
+      while (i < max) {
+        func(iterable[keys[i]], keys[i], iterable);
+        i++;
+      }
     }
-    return a;
-  };
+  }
+  return iterable;
 }
-
-var normalize = (k, v) => {
-
-  let reg = /^([a-z]+)([A-Z]{1})([a-z]+)$/;
-  let mat = k.match(reg);
-  if (mat && mat.index === 0) {
-    let a = [];
-    a.push(mat[1]);
-    a.push('-');
-    a.push(mat[2]);
-    a.push(mat[3]);
-    k = a.join('').toLowerCase();
-  }
-
-  if (isNumber(v)) {
-    v += 'px';
-  }
-
-  return {
-    key: k,
-    value: v
-  };
-};
-
-var nav = navigator;
-var win = window;
-var doc = document;
 
 var attachBehaviors;
 
-export var get = (el) => {
-  let p = (isString(el) ? doc.getElementById(el) : el) || null;
-  if (p && !p.___BEHAVIORS_ATTACHED) {
-    return attachBehaviors(p);
-  }
-  return p;
-};
+export const get = el => {
+  const p = (isStr(el) ? doc.querySelector(el) : el) || null;
+  return p && !p.___BEHAVIORS_ATTACHED ? attachBehaviors(p) : p;
+}
 
-export var add = (tag, parent) => {
-  let p = parent ? get(parent) : doc.body;
-  let d = isElement(tag) ? tag : doc.createElement(tag);
-  p.appendChild(d);
+export const add = (tag, parent) => {
+  parent = parent ? get(parent) : doc.body;
+  const d = isEl(tag) ? tag : doc.createElement(tag);
+  parent.appendChild(d);
   return get(d);
-};
+}
 
-export var create = (tag) => {
-  return get(doc.createElement(tag));
-};
+export const create = tag => get(doc.createElement(tag));
 
-export var query = (selector, root = doc) => {
-  let el;
-  let tmp = root.querySelector(selector);
-  if (tmp) {
-    el = get(tmp);
+export const query = (selector, element = doc) => get((isStr(element) ? doc.querySelector(element) : element).querySelector(selector));
+
+export const queryAll = (selector, element = doc) => Array.from((isStr(element) ? query(element) : element).querySelectorAll(selector)).map(el => get(el));
+
+const EventManager = curry((state, target, type, handle, options = false, once) => {
+  if (isStr(target)) target = query(target);
+  if (!target.addEventListener) throw new Error('EventManager: bad event target');
+  if (isNode(target) && !target.eventListeners) target.eventListeners = new Set;
+
+  function handler(evt) {
+    handle.call(target, evt, target);
+    once && target.removeEventListener(type, handler);
   }
-  return el;
-};
 
-export var queryAll = (selector, root = doc) => {
-  let els = [];
-  let tmp = root.querySelectorAll(selector);
-  if (tmp) {
-    Array.from(tmp).forEach((el) => {
-      els.push(get(el));
-    });
+  const remove = () => {
+    target.removeEventListener(type, handler);
+    target.eventListeners && target.eventListeners.delete(manager);
+  },
+  add = mode => {
+    once = !!mode;
+    remove();
+    target.addEventListener(type, handler, options);
+    target.eventListeners && target.eventListeners.add(manager);
+  },
+  manager = {
+    reseat(newTarget, removeOriginal) {
+      removeOriginal && remove();
+      return EventManager(state, newTarget, type, handle, options, once);
+    },
+    on: () => (add(), manager),
+    once: () => (add(true), manager),
+    off: () => (remove(), manager)
   }
-  return els;
+  return manager[state]();
+}, 4);
+
+export const Event = {
+  on: EventManager('on'),
+  once: EventManager('once'),
+  emit(target, event) {
+    if (isStr(target)) target = query(target);
+    if (target.addEventListener) target.dispatchEvent(isStr(event) ? new CustomEvent(event) : event);
+  },
+  stop(e) {
+    e.cancelBubble = true;
+    if (e.stopPropagation) e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+    return false;
+  }
 };
 
-attachBehaviors = (p) => {
-  if (p && isElement(p)) {
+attachBehaviors = p => {
+  if (p && isEl(p)) {
 
-    p.query = (selector) => {
-      return query(selector, p);
-    };
-    p.queryAll = (selector) => {
-      return queryAll(selector, p);
-    };
+    p.query = selector => query(selector, p);
+    p.queryAll = selector => queryAll(selector, p);
 
-    let pc = p.classList;
+    const pc = p.classList;
 
-    p.hasClass = (className = '') => {
-      let c = trim(className, true);
-      if (!c) {
-        return false;
-      }
-      return pc.contains(c);
-    };
+    p.hasClass = name => isStr(name) && pc.contains(name);
 
-    p.addClass = (className = '') => {
-      let c = trim(className, true);
-      if (!c) {
-        return false;
-      }
-      let a = c.split(' ');
-      pc.add(...a);
+    p.class = (name, state = !p.hasClass(name)) => {
+      state = state ? 'add' : 'remove';
+      name.indesOf(' ') !== -1 ? each(name.split(' '), cls => pc[state](cls)) : pc[state](name);
       return p;
     };
 
-    p.removeClass = (className = '') => {
-      let c = trim(className, true);
-      if (!c) {
-        return false;
-      }
-      let a = c.split(' ');
-      pc.remove(...a);
+    p.addClass = name => p.class (name, true);
+    p.removeClass = name => p.class (name, true);
+    p.toggleClass = name => p.class (name);
+
+    p.replaceClass = (oldClass = '', newClass = '') => p.class (oldClass, false).class (newClass, true);
+
+    p.hasAttr = attr => p.hasAttribute(attr);
+
+    p.attr = (attr, val) => {
+      if (p.attributes) isObj(attr) ? each(attr, (v, a) => p.setAttribute(a, v)) : isPrimitive(val) ? p.setAttribute(attr, val) : p.getAttribute(attr);
       return p;
-    };
+    }
 
-    p.toggleClass = (className = '') => {
-      let c = trim(className, true);
-      if (!c) {
-        return false;
-      }
-      let a = c.split(' ');
-      if (a.length > 1) {
-        a.forEach((s) => {
-          pc.toggle(s);
-        });
-      } else {
-        pc.toggle(c);
-      }
-      return p;
-    };
+    p.getAttr = attr => p.getAttribute(attr);
+    p.setAttr = (attr, val) => (p.attr(attr, val), p);
+    p.removeAttr = attr => (p.removeAttribute(attr), p);
 
-    p.replaceClass = (oldClass = '', newClass = '') => {
-      let o = trim(oldClass, true);
-      let n = trim(newClass, true);
-      p.removeClass(o);
-      p.addClass(n);
-      return p;
-    };
+    p.toggleAttr = (attr, state = !p.hasAttr(attr)) => (p[state ? 'setAttribute' : 'removeAttr'](name, ''), p);
 
-    p.setProperty = (o = {}) => {
-      for (let k in o) {
-        if (o[k] !== '') {
-          let v = o[k];
-          if (isString(v) || isNumber(v)) {
-            p.setAttribute(k, v);
-          }
-        }
-      }
-      return p;
-    };
+    p.css = (styles, prop) => (isObj(styles) ? each(styles, (val, key) => p.style[key] = val) : isStr(styles) && isStr(prop) && (p.style[styles] = prop), p);
 
-    let fixStyle = (s) => {
-      return s.replace(/;+/gi, ';').replace(/:/gi, ': ') + ';';
-    };
+    p.empty = () => (p.innerHTML = '', p);
 
-    p.setStyle = (o = {}) => {
+    p.html = s => isUndef(s) ? p.innerHTML : (p.innerHTML = s, p);
 
-      let a = [];
-      if (isObject(o)) {
-        for (let k in o) {
-          if (o[k] !== '') {
-            let v = o[k];
-            if (isString(v) || isNumber(v)) {
-              let x = normalize(k, v);
-              a.push([x.key, x.value].join(':'));
-            }
-          }
-        }
-      } else if (isString(o)) {
-        a = o.split(';');
-      }
-      let s = p.getAttribute('style');
-      if (s) {
-        let b = s.split(';');
-        a = b.concat(a);
-      }
-      a.push('');
-      let st = a.filter((item) => {
-        return trim(item, true).length > 0;
-      }).map((item) => {
-        let parts = item.split(':');
-        return parts.map((part) => {
-          return trim(part, true);
-        }).join(':');
-      }).join('; ');
-      p.setAttribute('style', fixStyle(st));
-      return p;
-    };
+    p.destroy = () => p.remove ? p.remove() : p.parentNode && p.parentNode.removeChild(p);
 
-    p.empty = () => {
-      p.innerHTML = '';
-      return p;
-    };
+    p.emit = Event.emit.bind(null, p);
 
-    p.html = (s) => {
-      if (isUndefined(s)) {
-        return p.innerHTML;
-      }
-      p.innerHTML = s;
-      return p;
-    };
-
-    p.destroy = () => {
-      if (p.parentNode) {
-        p.parentNode.removeChild(p);
-      }
-    };
-
-    p.___BEHAVIORS_ATTACHED = 1;
-
+    p.___BEHAVIORS_ATTACHED = !0;
   }
   return p;
 };
 
-export var ready = (fn) => {
-  let rt = doc.readyState;
-  let c = rt !== 'loading';
-  if (c) {
-    setTimeout(fn, 0);
-  } else {
-    doc.addEventListener('DOMContentLoaded', fn);
-  }
-};
+let LoadStack = [], isReady = false;
+Event.once(window, 'DOMContentLoaded', () => {
+  isReady = true;
+  each(LoadStack, fn => fn());
+  LoadStack = null;
+});
 
-export var Event = (() => {
-
-  let isGecko = ((ua) => {
-    let n = ua.toLowerCase();
-    return (/gecko/i).test(n);
-  })(nav.userAgent);
-
-  return {
-    on: (element, event, fn) => {
-      if (fn && isFunction(fn)) {
-        let el = isString(element) ? get(element) : element;
-        if (el && isElement(el)) {
-          if (event === 'wheel') {
-            event = isGecko ? 'DOMMouseScroll' : 'mousewheel';
-          }
-          if (el.addEventListener) {
-            el.addEventListener(event, fn, false);
-          } else if (el.attachEvent) {
-            el.attachEvent('on' + event, fn);
-          }
-        }
-      }
-    },
-    off: (element, event, fn) => {
-      if (fn && isFunction(fn)) {
-        let el = isString(element) ? get(element) : element;
-        if (el && isElement(el)) {
-          if (el.removeEventListener) {
-            el.removeEventListener(event, fn, false);
-          } else if (el.detachEvent) {
-            el.detachEvent('on' + event, fn);
-          }
-        }
-      }
-    },
-    simulate: (element, event) => {
-      let evt;
-      let el = isString(element) ? get(element) : element;
-      if (doc.createEventObject) {
-        evt = doc.createEventObject();
-        el.fireEvent('on' + event, evt);
-      } else {
-        evt = doc.createEvent('HTMLEvents');
-        evt.initEvent(event, true, true);
-        el.dispatchEvent(evt);
-      }
-    },
-    stop: (e) => {
-      e.cancelBubble = true;
-      if (e.stopPropagation) {
-        e.stopPropagation();
-      }
-      if (e.preventDefault) {
-        e.preventDefault();
-      }
-      return false;
-    },
-    locate: (e) => {
-      let evt = e || win.event;
-      let targ = evt.target || evt.srcElement;
-      if (targ && targ.nodeType === 3) {
-        targ = targ.parentNode;
-      }
-      return get(targ);
-    }
-  };
-})();
+export const ready = fn => isReady ? fn() : LoadStack.push(fn);
