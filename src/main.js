@@ -39,9 +39,14 @@ each = (iterable, func, i = 0) => {
 
 var attachBehaviors;
 
+
+export const query = (selector, element = doc) => get((isStr(element) ? doc.querySelector(element) : element).querySelector(selector));
+
+export const queryAll = (selector, element = doc) => Array.from((isStr(element) ? query(element) : element).querySelectorAll(selector)).map(el => get(el));
+
 export const get = el => {
-  const p = (isStr(el) ? doc.querySelector(el) : el) || null;
-  return p && !p.___BEHAVIORS_ATTACHED ? attachBehaviors(p) : p;
+  if(isStr(el)) el = query(el);
+  return el && !el.___BEHAVIORS_ATTACHED ? attachBehaviors(el) : el;
 }
 
 export const add = (tag, parent) => {
@@ -52,10 +57,6 @@ export const add = (tag, parent) => {
 }
 
 export const create = tag => get(doc.createElement(tag));
-
-export const query = (selector, element = doc) => get((isStr(element) ? doc.querySelector(element) : element).querySelector(selector));
-
-export const queryAll = (selector, element = doc) => Array.from((isStr(element) ? query(element) : element).querySelectorAll(selector)).map(el => get(el));
 
 const EventManager = curry((state, target, type, handle, options = false, once) => {
   if (isStr(target)) target = query(target);
